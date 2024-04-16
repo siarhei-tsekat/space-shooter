@@ -105,6 +105,34 @@ public class GameScreen implements Screen {
 
         playerShip.draw(batch);
 
+        renderLasers(delta);
+
+        detectCollisions();
+
+        batch.end();
+    }
+
+    private void detectCollisions() {
+        ListIterator<Laser> iterator = playerLaserList.listIterator();
+        while (iterator.hasNext()) {
+            Laser laser = iterator.next();
+            if (enemyShip.intersects(laser.getBoundingBox())) {
+                enemyShip.hit(laser);
+                iterator.remove();
+            }
+        }
+
+        iterator = enemyLaserList.listIterator();
+        while (iterator.hasNext()) {
+            Laser laser = iterator.next();
+            if (playerShip.intersects(laser.getBoundingBox())) {
+                playerShip.hit(laser);
+                iterator.remove();
+            }
+        }
+    }
+
+    private void renderLasers(float delta) {
         if (playerShip.canFireLaser()) {
             Laser[] lasers = playerShip.fireLasers();
             for (Laser laser : lasers) {
@@ -123,26 +151,23 @@ public class GameScreen implements Screen {
         while (iterator.hasNext()) {
             Laser laser = iterator.next();
             laser.draw(batch);
-            laser.yPosition += laser.movementSpeed * delta;
+            laser.boundingBox.y += laser.movementSpeed * delta;
 
-            if (laser.yPosition > WORLD_HEIGHT) {
+            if (laser.boundingBox.y > WORLD_HEIGHT) {
                 iterator.remove();
             }
         }
-
 
         ListIterator<Laser> enemyIterator = enemyLaserList.listIterator();
         while (enemyIterator.hasNext()) {
             Laser laser = enemyIterator.next();
             laser.draw(batch);
-            laser.yPosition -= laser.movementSpeed * delta;
+            laser.boundingBox.y -= laser.movementSpeed * delta;
 
-            if (laser.yPosition + laser.height < 0) {
+            if (laser.boundingBox.y + laser.boundingBox.height < 0) {
                 enemyIterator.remove();
             }
         }
-
-        batch.end();
     }
 
     private void renderBackground(float delta) {

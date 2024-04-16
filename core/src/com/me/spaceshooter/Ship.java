@@ -2,16 +2,14 @@ package com.me.spaceshooter;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 
 public abstract class Ship {
 
     float movementSpeed; // world units per second
     int shield;
 
-    float xPosition; // lower-left corner
-    float yPosition;
-    float width;
-    float height;
+    Rectangle boundingBox;
 
     TextureRegion shipTextureRegion;
     TextureRegion shieldTextureRegion;
@@ -33,10 +31,6 @@ public abstract class Ship {
                 TextureRegion laserTextureRegion) {
         this.movementSpeed = movementSpeed;
         this.shield = shield;
-        this.xPosition = xCentre - width / 2;
-        this.yPosition = yCentre - height / 2;
-        this.width = width;
-        this.height = height;
         this.shipTextureRegion = shipTextureRegion;
         this.shieldTextureRegion = shieldTextureRegion;
         this.laserTextureRegion = laserTextureRegion;
@@ -44,6 +38,8 @@ public abstract class Ship {
         this.laserHeight = laserHeight;
         this.laserMovementSpeed = laserMovementSpeed;
         this.timeBetweenShots = timeBetweenShots;
+
+        this.boundingBox = new Rectangle(xCentre - width / 2, yCentre - height / 2, width, height);
     }
 
     public void update(float deltaTime) {
@@ -56,10 +52,20 @@ public abstract class Ship {
 
     public abstract Laser[] fireLasers();
 
-    public void draw(Batch batch) {
-        batch.draw(shipTextureRegion, xPosition, yPosition, width, height);
+    public void hit(Laser laser) {
         if (shield > 0) {
-            batch.draw(shieldTextureRegion, xPosition, yPosition, width, height);
+            shield--;
         }
+    }
+
+    public void draw(Batch batch) {
+        batch.draw(shipTextureRegion, boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+        if (shield > 0) {
+            batch.draw(shieldTextureRegion, boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+        }
+    }
+
+    public boolean intersects(Rectangle otherRectangle) {
+        return boundingBox.overlaps(otherRectangle);
     }
 }
