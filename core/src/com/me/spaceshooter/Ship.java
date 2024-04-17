@@ -68,4 +68,8 @@ public abstract class Ship {
     public boolean intersects(Rectangle otherRectangle) {
         return boundingBox.overlaps(otherRectangle);
     }
+
+    public void translate(float x, float y) {
+        boundingBox.setPosition(boundingBox.x + x, boundingBox.y + y);
+    }
 }
