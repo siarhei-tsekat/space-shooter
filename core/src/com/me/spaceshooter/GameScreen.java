@@ -37,6 +37,8 @@ public class GameScreen implements Screen {
     private float backgroundOffset[] = {0, 0, 0, 0};
     private float backgroundMaxScrollingSpeed;
     private float backgroundHeight;
+    private float timeBetweenEnemySpawns = 3f;
+    private float enemySpawnTimer = 0;
 
     // world
     private final int WORLD_WIDTH = 72;
@@ -46,7 +48,7 @@ public class GameScreen implements Screen {
 
     // game objects
     private PlayerShip playerShip;
-    private EnemyShip enemyShip;
+    private LinkedList<EnemyShip> enemyShipList;
     private LinkedList<Laser> playerLaserList = new LinkedList<>();
     private LinkedList<Laser> enemyLaserList = new LinkedList<>();
 
@@ -83,13 +85,7 @@ public class GameScreen implements Screen {
                 0.4f, 4, 45, 0.5f,
                 playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
 
-        enemyShip = new EnemyShip(
-                48, 1,
-                10, 10,
-                SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5, WORLD_HEIGHT - 5,
-                0.3f, 5, 50, 0.8f,
-                enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion);
-
+        enemyShipList = new LinkedList<>();
     }
 
     @Override
@@ -97,17 +93,19 @@ public class GameScreen implements Screen {
 
         batch.begin();
 
-        detectInput(delta);
-
-        moveEnemies(delta);
-
-        playerShip.update(delta);
-        enemyShip.update(delta);
-
-        // scrolling background
         renderBackground(delta);
 
-        enemyShip.draw(batch);
+        detectInput(delta);
+
+        playerShip.update(delta);
+
+        spawnEnemyShips(delta);
+
+        for (EnemyShip enemyShip : enemyShipList) {
+            moveEnemies(enemyShip, delta);
+            enemyShip.update(delta);
+            enemyShip.draw(batch);
+        }
 
         playerShip.draw(batch);
 
@@ -118,7 +116,25 @@ public class GameScreen implements Screen {
         batch.end();
     }
 
-    private void moveEnemies(float delta) {
+    private void spawnEnemyShips(float deltaTime) {
+        enemySpawnTimer += deltaTime;
+
+        if (enemySpawnTimer > timeBetweenEnemySpawns) {
+
+            EnemyShip enemyShip = new EnemyShip(
+                    48, 1,
+                    10, 10,
+                    SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5, WORLD_HEIGHT - 5,
+                    0.3f, 5, 50, 0.8f,
+                    enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion);
+            enemyShipList.add(enemyShip);
+
+            enemySpawnTimer -= timeBetweenEnemySpawns;
+        }
+
+    }
+
+    private void moveEnemies(EnemyShip enemyShip, float delta) {
         float leftLimit = -enemyShip.boundingBox.x;
         float rightLimit = WORLD_WIDTH - enemyShip.boundingBox.x - enemyShip.boundingBox.width;
         float upLimit = WORLD_HEIGHT - enemyShip.boundingBox.y - enemyShip.boundingBox.height;
@@ -206,21 +222,25 @@ public class GameScreen implements Screen {
     }
 
     private void detectCollisions() {
-        ListIterator<Laser> iterator = playerLaserList.listIterator();
-        while (iterator.hasNext()) {
-            Laser laser = iterator.next();
-            if (enemyShip.intersects(laser.getBoundingBox())) {
-                enemyShip.hit(laser);
-                iterator.remove();
+        ListIterator<Laser> laserListIterator = playerLaserList.listIterator();
+        while (laserListIterator.hasNext()) {
+            Laser laser = laserListIterator.next();
+
+            for (EnemyShip enemyShip : enemyShipList) {
+                if (enemyShip.intersects(laser.getBoundingBox())) {
+                    enemyShip.hit(laser);
+                    laserListIterator.remove();
+                    break;
+                }
             }
         }
 
-        iterator = enemyLaserList.listIterator();
-        while (iterator.hasNext()) {
-            Laser laser = iterator.next();
+        laserListIterator = enemyLaserList.listIterator();
+        while (laserListIterator.hasNext()) {
+            Laser laser = laserListIterator.next();
             if (playerShip.intersects(laser.getBoundingBox())) {
                 playerShip.hit(laser);
-                iterator.remove();
+                laserListIterator.remove();
             }
         }
     }
@@ -233,10 +253,12 @@ public class GameScreen implements Screen {
             }
         }
 
-        if (enemyShip.canFireLaser()) {
-            Laser[] lasers = enemyShip.fireLasers();
-            for (Laser laser : lasers) {
-                enemyLaserList.add(laser);
+        for (EnemyShip enemyShip : enemyShipList) {
+            if (enemyShip.canFireLaser()) {
+                Laser[] lasers = enemyShip.fireLasers();
+                for (Laser laser : lasers) {
+                    enemyLaserList.add(laser);
+                }
             }
         }
 
