@@ -45,8 +45,8 @@ public class GameScreen implements Screen {
     private final float TOUCH_MOVEMENT_THRESHOLD = 0.5f;
 
     // game objects
-    private Ship playerShip;
-    private Ship enemyShip;
+    private PlayerShip playerShip;
+    private EnemyShip enemyShip;
     private LinkedList<Laser> playerLaserList = new LinkedList<>();
     private LinkedList<Laser> enemyLaserList = new LinkedList<>();
 
@@ -84,9 +84,9 @@ public class GameScreen implements Screen {
                 playerShipTextureRegion, playerShieldTextureRegion, playerLaserTextureRegion);
 
         enemyShip = new EnemyShip(
-                2, 1,
+                48, 1,
                 10, 10,
-                WORLD_WIDTH / 2, WORLD_HEIGHT * 3 / 4,
+                SpaceShooterGame.random.nextFloat() * (WORLD_WIDTH - 10) + 5, WORLD_HEIGHT - 5,
                 0.3f, 5, 50, 0.8f,
                 enemyShipTextureRegion, enemyShieldTextureRegion, enemyLaserTextureRegion);
 
@@ -98,6 +98,8 @@ public class GameScreen implements Screen {
         batch.begin();
 
         detectInput(delta);
+
+        moveEnemies(delta);
 
         playerShip.update(delta);
         enemyShip.update(delta);
@@ -114,6 +116,26 @@ public class GameScreen implements Screen {
         detectCollisions();
 
         batch.end();
+    }
+
+    private void moveEnemies(float delta) {
+        float leftLimit = -enemyShip.boundingBox.x;
+        float rightLimit = WORLD_WIDTH - enemyShip.boundingBox.x - enemyShip.boundingBox.width;
+        float upLimit = WORLD_HEIGHT - enemyShip.boundingBox.y - enemyShip.boundingBox.height;
+        float downLimit = WORLD_HEIGHT / 2f - enemyShip.boundingBox.y;
+
+
+        float xMove = enemyShip.getDirectionVector().x * enemyShip.movementSpeed * delta;
+        float yMove = enemyShip.getDirectionVector().y * enemyShip.movementSpeed * delta;
+
+        if (xMove > 0) xMove = Math.min(xMove, rightLimit);
+        else xMove = Math.max(xMove, leftLimit);
+
+        if (yMove > 0) yMove = Math.min(yMove, upLimit);
+        else yMove = Math.max(yMove, downLimit);
+
+        enemyShip.translate(xMove, yMove);
+
     }
 
     private void detectInput(float delta) {

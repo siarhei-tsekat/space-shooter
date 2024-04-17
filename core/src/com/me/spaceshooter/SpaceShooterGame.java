@@ -2,10 +2,14 @@ package com.me.spaceshooter;
 
 import com.badlogic.gdx.Game;
 
+import java.util.Random;
+
 public class SpaceShooterGame extends Game {
 
     GameScreen gameScreen;
 
+    public static Random random = new Random();
+    
     @Override
     public void create() {
         gameScreen = new GameScreen();
