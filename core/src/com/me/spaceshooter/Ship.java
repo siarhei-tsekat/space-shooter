@@ -52,10 +52,12 @@ public abstract class Ship {
 
     public abstract Laser[] fireLasers();
 
-    public void hit(Laser laser) {
+    public boolean hitAndCheckDestroyed(Laser laser) {
         if (shield > 0) {
             shield--;
+            return false;
         }
+        return true;
     }
 
     public void draw(Batch batch) {
